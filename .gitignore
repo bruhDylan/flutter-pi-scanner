@@ -1,0 +1,25 @@
+# Flutter
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.dart_tool/
+
+# Android
+**/android/.gradle/
+**/android/app/build/
+**/local.properties
+
+# iOS
+**/ios/Flutter/.symlinks/
+**/ios/Pods/
+**/ios/build/
+**/ios/Runner.xcworkspace/
+
+# VS Code
+.vscode/
+.idea/
+
+# macOS/Linux
+.DS_Store

@@ -1,0 +1,28 @@
+name: test_app
+description: A simple Flutter frontend for image or file picking
+publish_to: "none"
+
+# Flutter SDK version constraints
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  file_picker: ^8.0.0  # For picking images/files
+  flutter_web_plugins:
+    sdk: flutter
+  auto_size_text: ^3.0.0
+  cached_network_image: ^3.4.1
+  flutter_animate: ^4.5.2
+  google_fonts: ^6.3.2
+  percent_indicator: ^4.2.5
+  provider: ^6.1.5+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
