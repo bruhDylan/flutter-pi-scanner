@@ -1,8 +1,37 @@
 import 'package:flutter/material.dart';
-import 'dashboard.dart'; // To reuse the Scan model & mockScans
+import 'package:firebase_storage/firebase_storage.dart';
 
-class HistoryPage extends StatelessWidget {
+class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
+
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  /// Fetch all image files from the `crops` folder in Firebase Storage
+  Future<List<Map<String, String>>> _fetchStorageImages() async {
+    final storageRef = FirebaseStorage.instance.ref().child('crops');
+    final listResult = await storageRef.listAll();
+
+    final files = <Map<String, String>>[];
+    for (final item in listResult.items) {
+      try {
+        final url = await item.getDownloadURL();
+
+        // ✅ Keep .firebasestorage.app intact — this is your real bucket
+        debugPrint("🖼️ Loaded image: $url");
+
+        files.add({
+          'name': item.name,
+          'url': url,
+        });
+      } catch (e) {
+        debugPrint("⚠️ Failed to fetch URL for ${item.name}: $e");
+      }
+    }
+    return files;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,9 +39,8 @@ class HistoryPage extends StatelessWidget {
       backgroundColor: const Color(0xFF0A0E27),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0A0E27),
-        elevation: 0,
         title: const Text(
-          "Scan History",
+          'Scan History',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -21,221 +49,173 @@ class HistoryPage extends StatelessWidget {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Color(0xFF00FF41)),
-            onPressed: () {},
+            icon: const Icon(Icons.refresh, color: Color(0xFF00FF41)),
+            onPressed: () => setState(() {}),
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: mockScans.length,
-        itemBuilder: (context, index) {
-          final scan = mockScans[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ScanDetailPage(scan: scan),
-                ),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1F3A),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFF00FF41).withOpacity(0.1),
-                  width: 1,
-                ),
+      body: FutureBuilder<List<Map<String, String>>>(
+        future: _fetchStorageImages(),
+        builder: (context, snapshot) {
+          // ⏳ Loading state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF00FF41)),
+            );
+          }
+
+          // ❌ Error state
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error loading images:\n${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.redAccent),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    // Thumbnail icon
-                    Container(
+            );
+          }
+
+          final files = snapshot.data ?? [];
+
+          // 📭 No data
+          if (files.isEmpty) {
+            return const Center(
+              child: Text(
+                'No scans found in Firebase Storage.',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            );
+          }
+
+          // ✅ Success — build the list
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: files.length,
+            itemBuilder: (context, index) {
+              final file = files[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ImageDetailPage(
+                        name: file['name']!,
+                        url: file['url']!,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1F3A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF00FF41).withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    leading: SizedBox(
                       width: 60,
                       height: 60,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0A0E27),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF00FF41).withOpacity(0.3),
-                          width: 1.5,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          file['url']!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: Color(0xFF00FF41),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: const Color(0xFF0A0E27),
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                              size: 30,
+                            ),
+                          ),
                         ),
                       ),
-                      child: const Icon(
-                        Icons.bug_report,
-                        color: Color(0xFF00FF41),
-                        size: 28,
-                      ),
                     ),
-                    const SizedBox(width: 16),
-
-                    // Info section
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            scan.disease,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatDate(scan.timestamp),
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "${scan.confidence.toInt()}% Confidence, Diagnosis: ${scan.disease}",
-                            style: const TextStyle(
-                              color: Color(0xFF00FF41),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            "Recommendation: ${scan.recommendations.first}",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
+                    title: Text(
+                      file['name']!,
+                      style: const TextStyle(color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Icon(
+                    trailing: const Icon(
                       Icons.arrow_forward_ios,
                       color: Color(0xFF00FF41),
                       size: 16,
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
     );
   }
-
-  String _formatDate(DateTime date) {
-    return "${_monthName(date.month)} ${date.day}, ${date.year}";
-  }
-
-  String _monthName(int month) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return months[month - 1];
-  }
 }
 
-class ScanDetailPage extends StatelessWidget {
-  final Scan scan;
-  const ScanDetailPage({super.key, required this.scan});
+/// Fullscreen image viewer
+class ImageDetailPage extends StatelessWidget {
+  final String name;
+  final String url;
+
+  const ImageDetailPage({super.key, required this.name, required this.url});
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Keep URL as-is (.firebasestorage.app)
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0A0E27),
-        title: Text(scan.disease),
+        title: Text(
+          name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1F3A),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.image_outlined,
-                  size: 60,
-                  color: Color(0xFF00FF41),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Confidence
-            Text(
-              "Confidence: ${scan.confidence.toInt()}%",
-              style: const TextStyle(
-                color: Color(0xFF00FF41),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Date
-            Text(
-              "Detected on ${_formatDate(scan.timestamp)}",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Recommendations
-            const Text(
-              "Recommendations",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...scan.recommendations.map((rec) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.check, color: Color(0xFF00FF41), size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          rec,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 15,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
+      body: Center(
+        child: InteractiveViewer(
+          panEnabled: true,
+          minScale: 0.8,
+          maxScale: 3.0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF00FF41),
                   ),
-                )),
-          ],
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.broken_image,
+                color: Colors.grey,
+                size: 100,
+              ),
+            ),
+          ),
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
   }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "316215460819",
+    "project_id": "cropvisionsystem",
+    "storage_bucket": "cropvisionsystem.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316215460819:android:3291bc22e30a47aa096526",
+        "android_client_info": {
+          "package_name": "com.example.test_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlhtOlAPiAXWS7l1tQm4qJM67CtpuhtbU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

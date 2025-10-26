@@ -9,9 +9,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  file_picker: ^8.0.0  # For picking images/files
+
+  # 🌐 Flutter Web Plugins
   flutter_web_plugins:
     sdk: flutter
+
+  # 🧱 Firebase Core Packages
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.4.10
+
+  # 🧩 UI & Utilities
+  file_picker: ^8.0.0           # For picking images/files
   auto_size_text: ^3.0.0
   cached_network_image: ^3.4.1
   flutter_animate: ^4.5.2

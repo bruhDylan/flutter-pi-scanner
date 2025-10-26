@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'login.dart'; // temporary login/signup page
 import 'main_nav.dart'; // main navigation after login
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Initialize Firebase before running the app
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
@@ -37,7 +47,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // 👇 Start with the Login Page (no const, to avoid the compile error)
+      // 👇 Start with the Login Page
       home: LoginPage(),
     );
   }
