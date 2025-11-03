@@ -50,7 +50,7 @@ class _MainNavState extends State<MainNav> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF00FF41),
+          selectedItemColor: Colors.white,
           unselectedItemColor: Colors.grey,
           showUnselectedLabels: true,
           items: const [
